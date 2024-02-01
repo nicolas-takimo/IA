@@ -3,6 +3,7 @@ import time
 from queue import PriorityQueue
 from scipy.signal import convolve2d as conv2
 
+#Cronstrução dos estados das matrizes 
 class Estado:
     def __init__(self, pai=None, matriz=None):
         self.pai = pai
@@ -22,18 +23,21 @@ class Estado:
             print(linha)
         print()
 
+#Ações permitidas
 def acoes_permitidas(estado):
     adj = np.array([[0, 1, 0], [1, 0, 1], [0, 1, 0]])
     blank = estado.matriz == 9
     mask = conv2(blank, adj, 'same') == 1
     return estado.matriz[mask]
 
+#Movimentar o espaço em branco
 def movimentar(s, c):
     matriz = s.matriz.copy()
     idx_branco, idx_c = np.where(matriz == 9), np.where(matriz == c)
     matriz[idx_branco], matriz[idx_c] = matriz[idx_c], matriz[idx_branco]
     return Estado(pai=s, matriz=matriz)
 
+#Heuristica manhattan
 def distancia_manhattan(estado, objetivo):
     distancia = 0
     for valor in range(1, 10):
@@ -42,9 +46,11 @@ def distancia_manhattan(estado, objetivo):
         distancia += abs(pos_atual[0] - pos_objetivo[0]) + abs(pos_atual[1] - pos_objetivo[1])
     return distancia.sum()
 
+#heurística hammig
 def hamming(estado, objetivo):
     return np.sum((estado.matriz != objetivo) & (estado.matriz != 9))
 
+#Algortmo A*
 def a_star(estado_inicial, objetivo, heuristica):
     Q = PriorityQueue()
     estado_inicial.c = heuristica(estado_inicial, objetivo)
@@ -59,7 +65,7 @@ def a_star(estado_inicial, objetivo, heuristica):
         iteracoes += 1  # Incrementa o contador a cada iteração
 
         if np.array_equal(estado_atual.matriz, objetivo):
-            end_time = time.time()  # Tempo de término
+            end_time = time.time() 
             print(f"Número de iterações: {iteracoes}")
             print(f"Tempo de execução: {end_time - start_time:.6f} segundos")
             return reconstruir_caminho(estado_atual)
@@ -71,18 +77,20 @@ def a_star(estado_inicial, objetivo, heuristica):
             novo_estado.p = novo_estado.d + novo_estado.c
             Q.put((novo_estado.p, novo_estado))
 
-    end_time = time.time()  # Tempo de término
+    end_time = time.time() 
     print(f"Número de iterações: {iteracoes}")
     print(f"Tempo de execução: {end_time - start_time:.6f} segundos")
     return None
 
-
+#Mostrar o caminho para resolver o game
 def reconstruir_caminho(estado_atual):
     caminho = []
     while estado_atual is not None:
         caminho.append(estado_atual)
         estado_atual = estado_atual.pai
     return caminho[::-1]
+
+#Verificar se existe solução pelo número de inversões 
 
 def tem_solucao(matriz):
     arr = matriz.flatten()
@@ -98,6 +106,7 @@ estado_inicial = Estado(matriz=np.array([[5, 3, 2], [7, 6, 4], [8, 1, 9]]))
 #estado_inicial = Estado(matriz=np.array([[4, 6, 7], [9, 5, 8], [2, 1, 3]]))
 objetivo = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
 
+# Verificar se o estado inicial tem solução
 if tem_solucao(estado_inicial.matriz):
     # Escolha a heurística aqui: hamming ou distancia_manhattan
     caminho_solucao = a_star(estado_inicial, objetivo, hamming)  # hammig ou distancia_manhattan
